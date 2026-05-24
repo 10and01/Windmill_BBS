@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - Windmill_BBS</title>
+    <link rel="icon" href="../Windmill_Icon.ico">
+    <link rel="stylesheet" href="../static/css/theme.css">
+    <script src="../static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+        .admin-sidebar {
+            width: 220px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised-sm);
+            padding: 24px 0;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            overflow-y: auto;
+            border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+            z-index: 101;
+        }
+        .admin-logo {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            padding: 0 20px;
+            background: linear-gradient(45deg, #ff9a56, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .menu-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 4px 12px;
+            border-radius: var(--radius);
+        }
+        .menu-item:hover {
+            box-shadow: var(--shadow-inset-sm);
+            color: var(--text-primary);
+        }
+        .menu-item.active {
+            box-shadow: var(--shadow-inset);
+            color: var(--accent-blue);
+        }
+        .admin-main {
+            flex: 1;
+            margin-left: 220px;
+            padding: 32px;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 14px 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table td {
+            padding: 14px 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table tr:hover td {
+            box-shadow: var(--shadow-inset-sm);
+        }
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table td .title-link {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .data-table td .title-link:hover {
+            color: var(--accent-blue);
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .board-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 16px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-lg);
+        }
+        .board-form input {
+            flex: 1;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-logo">Windmill_BBS</div>
+            <div class="menu-item active" onclick="showSection('postSection', this)">
+                <span>📋</span> 帖子管理
+            </div>
+            <div class="menu-item" onclick="showSection('boardSection', this)">
+                <span>📁</span> 版块管理
+            </div>
+            <div class="menu-item" onclick="showSection('reportSection', this)">
+                <span>🚨</span> 举报管理
+            </div>
+            <div class="menu-item" onclick="location.href='../index.html'">
+                <span>🏠</span> 返回首页
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <!-- 帖子管理 -->
+            <div class="section active" id="postSection">
+                <div class="page-header">
+                    <h2>帖子管理</h2>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>标题</th>
+                            <th>作者</th>
+                            <th>版块</th>
+                            <th>发布时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postTableBody"></tbody>
+                </table>
+                <div class="pagination" id="postPagination"></div>
+            </div>
+
+            <!-- 版块管理 -->
+            <div class="section" id="boardSection">
+                <div class="page-header">
+                    <h2>版块管理</h2>
+                </div>
+                <div class="board-form">
+                    <input type="text" class="input-field" id="newBoardName" placeholder="版块名称">
+                    <input type="text" class="input-field" id="newBoardDesc" placeholder="版块描述">
+                    <input type="number" class="input-field" id="newBoardSort" placeholder="排序" value="0" style="width:100px;">
+                    <select class="input-field" id="newBoardPermission" style="width:140px;">
+                        <option value="0">所有人可发</option>
+                        <option value="1">仅管理员</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="addBoard()">新增版块</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>名称</th>
+                            <th>描述</th>
+                            <th>帖子数</th>
+                            <th>排序</th>
+                            <th>发布权限</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boardTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- 举报管理 -->
+            <div class="section" id="reportSection">
+                <div class="page-header">
+                    <h2>举报管理</h2>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>举报人</th>
+                            <th>类型</th>
+                            <th>对象ID</th>
+                            <th>原因</th>
+                            <th>状态</th>
+                            <th>时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody"></tbody>
+                </table>
+                <div class="pagination" id="reportPagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentPostPage = 1;
+        let currentReportPage = 1;
+
+        async function init() {
+            await checkAdmin();
+            await loadAdminPosts();
+            await loadAdminBoards();
+            await loadReports();
+        }
+
+        async function checkAdmin() {
+            try {
+                const res = await fetch('../api/user/info');
+                const data = await res.json();
+                if (data.code !== 200 || data.data.role !== 2) {
+                    location.href = '../login.html';
+                }
+            } catch (e) {
+                location.href = '../login.html';
+            }
+        }
+
+        function showSection(sectionId, menuEl) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            menuEl.classList.add('active');
+        }
+
+        async function loadAdminPosts() {
+            try {
+                const res = await fetch(`../api/admin/post/list?page=${currentPostPage}&pageSize=20`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    renderPostTable(data.data.list);
+                    renderPostPagination(data.data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderPostTable(posts) {
+            const tbody = document.getElementById('postTableBody');
+            if (!posts || posts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无数据</td></tr>';
+                return;
+            }
+            let html = '';
+            posts.forEach(p => {
+                html += `<tr>
+                    <td>${p.postId}</td>
+                    <td><a class="title-link" href="../post/detail.html?id=${p.postId}" target="_blank">${escapeHtml(p.title)}</a></td>
+                    <td>${escapeHtml(p.authorName || '')}</td>
+                    <td>${escapeHtml(p.boardName || '')}</td>
+                    <td>${formatTime(p.postTime)}</td>
+                    <td>${p.status === 1 ? '<span class="status-badge status-normal">正常</span>' : '<span class="status-badge status-deleted">已删除</span>'}</td>
+                    <td>
+                        ${p.status === 1 ? `<button class="btn btn-secondary btn-sm" onclick="toggleTop(${p.postId}, ${!p.isTop})">${p.isTop ? '取消置顶' : '置顶'}</button>` : ''}
+                        ${p.status === 1 ? `<button class="btn btn-secondary btn-sm" onclick="toggleElite(${p.postId}, ${!p.isElite})">${p.isElite ? '取消精华' : '加精'}</button>` : ''}
+                        ${p.status === 1 ? `<button class="btn btn-danger btn-sm" onclick="adminDeletePost(${p.postId})">删除</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderPostPagination(pageInfo) {
+            const container = document.getElementById('postPagination');
+            if (pageInfo.pages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '';
+            if (pageInfo.page > 1) {
+                html += `<a onclick="goPostPage(${pageInfo.page - 1})">上一页</a>`;
+            } else {
+                html += `<span class="disabled">上一页</span>`;
+            }
+            for (let i = 1; i <= pageInfo.pages; i++) {
+                if (i === pageInfo.page) {
+                    html += `<span class="active">${i}</span>`;
+                } else if (Math.abs(i - pageInfo.page) <= 2 || i === 1 || i === pageInfo.pages) {
+                    html += `<a onclick="goPostPage(${i})">${i}</a>`;
+                } else if (Math.abs(i - pageInfo.page) === 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+            if (pageInfo.page < pageInfo.pages) {
+                html += `<a onclick="goPostPage(${pageInfo.page + 1})">下一页</a>`;
+            } else {
+                html += `<span class="disabled">下一页</span>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function goPostPage(page) {
+            currentPostPage = page;
+            loadAdminPosts();
+        }
+
+        async function adminDeletePost(postId) {
+            if (!confirm('确定删除此帖子吗？')) return;
+            try {
+                const res = await fetch('../api/admin/post/delete', {
+                    method: 'POST',
+                    body: new URLSearchParams({postId})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('删除成功', 'success');
+                    loadAdminPosts();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function toggleTop(postId, isTop) {
+            try {
+                const res = await fetch('../api/admin/post/top', {
+                    method: 'POST',
+                    body: new URLSearchParams({postId, isTop})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('操作成功', 'success');
+                    loadAdminPosts();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function toggleElite(postId, isElite) {
+            try {
+                const res = await fetch('../api/admin/post/elite', {
+                    method: 'POST',
+                    body: new URLSearchParams({postId, isElite})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('操作成功', 'success');
+                    loadAdminPosts();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function loadAdminBoards() {
+            try {
+                const res = await fetch('../api/board/list');
+                const data = await res.json();
+                if (data.code === 200) {
+                    renderBoardTable(data.data);
+                }
+            } catch (e) {}
+        }
+
+        function renderBoardTable(boards) {
+            const tbody = document.getElementById('boardTableBody');
+            if (!boards || boards.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无数据</td></tr>';
+                return;
+            }
+            let html = '';
+            boards.forEach(b => {
+                const permText = b.postPermission === 1 ? '仅管理员' : '所有人';
+                html += `<tr>
+                    <td>${b.boardId}</td>
+                    <td>${escapeHtml(b.boardName)}</td>
+                    <td>${escapeHtml(b.description || '')}</td>
+                    <td>${b.postCount || 0}</td>
+                    <td>${b.sortOrder || 0}</td>
+                    <td>${permText}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="editBoardPermission(${b.boardId}, ${b.postPermission || 0})">权限</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteBoard(${b.boardId})">删除</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function addBoard() {
+            const boardName = document.getElementById('newBoardName').value.trim();
+            const description = document.getElementById('newBoardDesc').value.trim();
+            const sortOrder = document.getElementById('newBoardSort').value;
+            const postPermission = document.getElementById('newBoardPermission').value;
+            if (!boardName) {
+                showToast('请输入版块名称', 'error');
+                return;
+            }
+            try {
+                const res = await fetch('../api/board/add', {
+                    method: 'POST',
+                    body: new URLSearchParams({boardName, description, sortOrder, postPermission})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('添加成功', 'success');
+                    document.getElementById('newBoardName').value = '';
+                    document.getElementById('newBoardDesc').value = '';
+                    loadAdminBoards();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function deleteBoard(boardId) {
+            if (!confirm('确定删除此版块吗？所属帖子也会被删除。')) return;
+            try {
+                const res = await fetch('../api/board/delete', {
+                    method: 'POST',
+                    body: new URLSearchParams({boardId})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('删除成功', 'success');
+                    loadAdminBoards();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const res = await fetch(`../api/admin/report/list?page=${currentReportPage}&pageSize=20`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    renderReportTable(data.data.list);
+                    renderReportPagination(data.data);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderReportTable(reports) {
+            const tbody = document.getElementById('reportTableBody');
+            if (!reports || reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
+                return;
+            }
+            let html = '';
+            reports.forEach(r => {
+                const typeText = r.targetType === 1 ? '帖子' : '回复';
+                const statusText = r.status === 0 ? '<span class="status-badge status-pending">待处理</span>' :
+                    r.status === 1 ? '<span class="status-badge status-deleted">已删除</span>' :
+                    '<span class="status-badge status-normal">已忽略</span>';
+                const targetLink = r.targetType === 1 ? `../post/detail.html?id=${r.targetId}` : '#';
+                html += `<tr>
+                    <td>${r.reportId}</td>
+                    <td>${escapeHtml(r.reporterName || '')}</td>
+                    <td>${typeText}</td>
+                    <td><a class="title-link" href="${targetLink}" target="_blank">${r.targetId}</a></td>
+                    <td>${escapeHtml(r.reason)}</td>
+                    <td>${statusText}</td>
+                    <td>${formatTime(r.createTime)}</td>
+                    <td>
+                        ${r.status === 0 ? `<button class="btn btn-danger btn-sm" onclick="handleReport(${r.reportId}, 1)">删除内容</button>` : ''}
+                        ${r.status === 0 ? `<button class="btn btn-secondary btn-sm" onclick="handleReport(${r.reportId}, 2)">忽略</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderReportPagination(pageInfo) {
+            const container = document.getElementById('reportPagination');
+            if (pageInfo.pages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '';
+            if (pageInfo.page > 1) {
+                html += `<a onclick="goReportPage(${pageInfo.page - 1})">上一页</a>`;
+            } else {
+                html += `<span class="disabled">上一页</span>`;
+            }
+            for (let i = 1; i <= pageInfo.pages; i++) {
+                if (i === pageInfo.page) {
+                    html += `<span class="active">${i}</span>`;
+                } else if (Math.abs(i - pageInfo.page) <= 2 || i === 1 || i === pageInfo.pages) {
+                    html += `<a onclick="goReportPage(${i})">${i}</a>`;
+                } else if (Math.abs(i - pageInfo.page) === 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+            if (pageInfo.page < pageInfo.pages) {
+                html += `<a onclick="goReportPage(${pageInfo.page + 1})">下一页</a>`;
+            } else {
+                html += `<span class="disabled">下一页</span>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function goReportPage(page) {
+            currentReportPage = page;
+            loadReports();
+        }
+
+        async function handleReport(reportId, action) {
+            const actionText = action === 1 ? '删除内容' : '忽略';
+            if (!confirm(`确定要${actionText}此举报吗？`)) return;
+            try {
+                const res = await fetch('../api/admin/report/handle', {
+                    method: 'POST',
+                    body: new URLSearchParams({reportId, action})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('处理成功', 'success');
+                    loadReports();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function editBoardPermission(boardId, currentPerm) {
+            const newPerm = currentPerm === 1 ? 0 : 1;
+            if (!confirm(`确定将发布权限改为"${newPerm === 1 ? '仅管理员' : '所有人'}"吗？`)) return;
+            try {
+                const res = await fetch('../api/board/update', {
+                    method: 'POST',
+                    body: new URLSearchParams({boardId, postPermission: newPerm})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('修改成功', 'success');
+                    loadAdminBoards();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast toast-' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        init();
+    </script>
+</body>
+</html>

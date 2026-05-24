@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windmill_BBS - 首页</title>
+    <link rel="icon" href="Windmill_Icon.ico">
+    <link rel="stylesheet" href="static/css/theme.css">
+    <script src="static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .board-nav h3 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .board-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .board-item:hover {
+            box-shadow: var(--shadow-inset-sm);
+            color: var(--text-primary);
+        }
+        .board-item.active {
+            box-shadow: var(--shadow-inset);
+            color: var(--accent-blue);
+        }
+        .board-item span:last-child {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .board-item.active span:last-child {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo"><img src="Windmill_Icon.ico" alt=""> Windmill_BBS</a>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">首页</a>
+            <a href="login.html" id="navLogin">登录</a>
+            <a href="register.html" id="navRegister">注册</a>
+            <a href="javascript:void(0)" onclick="goProfile()" id="navProfile" style="display:none">个人中心</a>
+            <a href="admin/dashboard.html" id="adminLink" style="display:none">后台管理</a>
+            <a href="javascript:void(0)" onclick="logout()" id="navLogout" style="display:none">退出</a>
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="card board-nav">
+                <h3>版块导航</h3>
+                <div class="board-item active" data-id="0" onclick="selectBoard(0)">
+                    <span>全部帖子</span>
+                    <span id="allCount">0</span>
+                </div>
+                <div id="boardList"></div>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <div class="search-bar">
+                <input type="text" class="input-field" id="searchInput" placeholder="搜索帖子...">
+                <button class="btn btn-primary" onclick="doSearch()">搜索</button>
+            </div>
+            <div class="sort-bar">
+                <button class="sort-btn active" id="sortLatest" onclick="setSort('latest')">最新</button>
+                <button class="sort-btn" id="sortHot" onclick="setSort('hot')">热门</button>
+            </div>
+            <div id="postList"></div>
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <a href="javascript:void(0)" class="fab" onclick="openPublishModal()" title="发表帖子">+</a>
+
+    <!-- 发表帖子模态框 -->
+    <div class="modal-overlay" id="publishModal">
+        <div class="modal-content">
+            <div class="modal-header">发表新帖子</div>
+            <div class="modal-body">
+                <div style="margin-bottom:14px;">
+                    <select class="input-field" id="publishBoardId">
+                        <option value="">选择版块</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <input type="text" class="input-field" id="publishTitle" placeholder="帖子标题">
+                </div>
+                <div>
+                    <textarea class="input-field" id="publishContent" placeholder="帖子内容"></textarea>
+                </div>
+                <div id="publishImages" style="margin-top:10px;"></div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="uploadImage('publish')">
+                    <span>📎</span> 添加图片
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePublishModal()">取消</button>
+                <button class="btn btn-primary" onclick="doPublish()">发表</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentBoardId = 0;
+        let currentPage = 1;
+        let currentKeyword = '';
+        let currentSort = 'latest';
+        let currentUser = null;
+
+        async function init() {
+            await checkLogin();
+            await loadBoards();
+            await loadPosts();
+        }
+
+        async function checkLogin() {
+            try {
+                const res = await fetch('api/user/info');
+                const data = await res.json();
+                if (data.code === 200) {
+                    currentUser = data.data;
+                    document.getElementById('navLogin').style.display = 'none';
+                    document.getElementById('navRegister').style.display = 'none';
+                    document.getElementById('navProfile').style.display = '';
+                    document.getElementById('navLogout').style.display = '';
+                    if (currentUser.role === 2) {
+                        document.getElementById('adminLink').style.display = '';
+                    }
+                } else {
+                    document.getElementById('navLogin').style.display = '';
+                    document.getElementById('navRegister').style.display = '';
+                    document.getElementById('navProfile').style.display = 'none';
+                    document.getElementById('navLogout').style.display = 'none';
+                    document.getElementById('adminLink').style.display = 'none';
+                }
+            } catch (e) {
+                document.getElementById('navLogin').style.display = '';
+                document.getElementById('navRegister').style.display = '';
+                document.getElementById('navProfile').style.display = 'none';
+                document.getElementById('navLogout').style.display = 'none';
+                document.getElementById('adminLink').style.display = 'none';
+            }
+        }
+
+        async function loadBoards() {
+            try {
+                const res = await fetch('api/board/list');
+                const data = await res.json();
+                if (data.code === 200) {
+                    const list = document.getElementById('boardList');
+                    let html = '';
+                    let totalPosts = 0;
+                    data.data.forEach(b => {
+                        totalPosts += b.postCount || 0;
+                        html += `<div class="board-item" data-id="${b.boardId}" onclick="selectBoard(${b.boardId})">
+                            <span>${escapeHtml(b.boardName)}</span>
+                            <span>${b.postCount || 0}</span>
+                        </div>`;
+                    });
+                    list.innerHTML = html;
+                    document.getElementById('allCount').textContent = totalPosts;
+
+                    const select = document.getElementById('publishBoardId');
+                    data.data.forEach(b => {
+                        if (b.postPermission === 1 && (!currentUser || currentUser.role !== 2)) return;
+                        const opt = document.createElement('option');
+                        opt.value = b.boardId;
+                        opt.textContent = b.boardName;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error('加载版块失败', e);
+            }
+        }
+
+        async function loadPosts() {
+            try {
+                let url;
+                if (currentKeyword) {
+                    url = `api/post/search?keyword=${encodeURIComponent(currentKeyword)}&page=${currentPage}&pageSize=20`;
+                } else {
+                    url = `api/post/list?boardId=${currentBoardId}&page=${currentPage}&pageSize=20`;
+                }
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.code === 200) {
+                    let posts = data.data.list;
+                    if (currentSort === 'hot' && !currentKeyword) {
+                        posts = posts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+                    }
+                    renderPosts(posts);
+                    renderPagination(data.data);
+                }
+            } catch (e) {
+                console.error('加载帖子失败', e);
+            }
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('postList');
+            if (!posts || posts.length === 0) {
+                container.innerHTML = `<div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                    <div>暂无帖子</div>
+                </div>`;
+                return;
+            }
+            let html = '';
+            posts.forEach(p => {
+                const avatarHtml = p.authorAvatar ? `<img src="${p.authorAvatar}" alt="">` : (p.authorName || '匿').charAt(0);
+                html += `<div class="post-card" onclick="goDetail(${p.postId})">
+                    <div class="avatar">${avatarHtml}</div>
+                    <div class="post-body">
+                        <div class="post-title">
+                            ${p.isTop ? '<span class="tag tag-top">置顶</span>' : ''}
+                            ${p.isElite ? '<span class="tag tag-elite">精华</span>' : ''}
+                            ${escapeHtml(p.title)}
+                        </div>
+                        <div class="post-meta">
+                            <span class="author">${escapeHtml(p.authorName || '匿名用户')}</span>
+                            <span class="dot"></span>
+                            <span>${formatTime(p.postTime)}</span>
+                            <span class="dot"></span>
+                            <span>${escapeHtml(p.boardName || '')}</span>
+                        </div>
+                    </div>
+                    <div class="post-stats">
+                        <span>👁 ${p.viewCount || 0}</span>
+                        <span>💬 ${p.replyCount || 0}</span>
+                        <span>❤️ ${p.likeCount || 0}</span>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderPagination(pageInfo) {
+            const container = document.getElementById('pagination');
+            if (pageInfo.pages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            let html = '';
+            if (pageInfo.page > 1) {
+                html += `<a onclick="goPage(${pageInfo.page - 1})">上一页</a>`;
+            } else {
+                html += `<span class="disabled">上一页</span>`;
+            }
+            for (let i = 1; i <= pageInfo.pages; i++) {
+                if (i === pageInfo.page) {
+                    html += `<span class="active">${i}</span>`;
+                } else if (Math.abs(i - pageInfo.page) <= 2 || i === 1 || i === pageInfo.pages) {
+                    html += `<a onclick="goPage(${i})">${i}</a>`;
+                } else if (Math.abs(i - pageInfo.page) === 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+            if (pageInfo.page < pageInfo.pages) {
+                html += `<a onclick="goPage(${pageInfo.page + 1})">下一页</a>`;
+            } else {
+                html += `<span class="disabled">下一页</span>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function selectBoard(boardId) {
+            currentBoardId = boardId;
+            currentPage = 1;
+            currentKeyword = '';
+            document.getElementById('searchInput').value = '';
+            document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.board-item[data-id="${boardId}"]`).classList.add('active');
+            loadPosts();
+        }
+
+        function setSort(sort) {
+            currentSort = sort;
+            document.getElementById('sortLatest').classList.toggle('active', sort === 'latest');
+            document.getElementById('sortHot').classList.toggle('active', sort === 'hot');
+            currentPage = 1;
+            loadPosts();
+        }
+
+        function goPage(page) {
+            currentPage = page;
+            loadPosts();
+        }
+
+        function doSearch() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                currentKeyword = '';
+                currentPage = 1;
+                loadPosts();
+                return;
+            }
+            currentKeyword = keyword;
+            currentPage = 1;
+            loadPosts();
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') doSearch();
+        });
+
+        function goDetail(postId) {
+            location.href = 'post/detail.html?id=' + postId;
+        }
+
+        function goProfile() {
+            if (!currentUser) {
+                showToast('请先登录', 'error');
+                setTimeout(() => location.href = 'login.html', 1000);
+                return;
+            }
+            location.href = 'user/profile.html';
+        }
+
+        function logout() {
+            fetch('api/user/logout', {method: 'POST'}).then(() => {
+                location.href = 'login.html';
+            });
+        }
+
+        function openPublishModal() {
+            if (!currentUser) {
+                showToast('请先登录', 'error');
+                setTimeout(() => location.href = 'login.html', 1000);
+                return;
+            }
+            document.getElementById('publishModal').classList.add('active');
+        }
+
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.remove('active');
+        }
+
+        let publishImageUrls = [];
+
+        async function uploadImage(context) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async function() {
+                const file = input.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const res = await fetch('api/upload/image', {method: 'POST', body: formData});
+                    const data = await res.json();
+                    if (data.code === 200) {
+                        if (context === 'publish') {
+                            publishImageUrls.push(data.data);
+                            renderPublishImages();
+                        } else if (context === 'reply') {
+                            replyImageUrls.push(data.data);
+                            renderReplyImages();
+                        } else if (context === 'edit') {
+                            editImageUrls.push(data.data);
+                            renderEditImages();
+                        }
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                } catch (e) {
+                    showToast('上传失败', 'error');
+                }
+            };
+            input.click();
+        }
+
+        function renderPublishImages() {
+            const container = document.getElementById('publishImages');
+            if (publishImageUrls.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = '<div class="image-grid">' + publishImageUrls.map(url => `<img src="${url}" onclick="removePublishImage('${url}')">`).join('') + '</div>';
+        }
+
+        function removePublishImage(url) {
+            publishImageUrls = publishImageUrls.filter(u => u !== url);
+            renderPublishImages();
+        }
+
+        async function doPublish() {
+            const boardId = document.getElementById('publishBoardId').value;
+            const title = document.getElementById('publishTitle').value.trim();
+            const content = document.getElementById('publishContent').value.trim();
+            if (!boardId) { showToast('请选择版块', 'error'); return; }
+            if (!title) { showToast('请输入标题', 'error'); return; }
+            if (!content) { showToast('请输入内容', 'error'); return; }
+
+            const params = new URLSearchParams({boardId, title, content});
+            if (publishImageUrls.length > 0) {
+                params.append('images', JSON.stringify(publishImageUrls));
+            }
+            try {
+                const res = await fetch('api/post/publish', {
+                    method: 'POST',
+                    body: params
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('发表成功', 'success');
+                    closePublishModal();
+                    document.getElementById('publishTitle').value = '';
+                    document.getElementById('publishContent').value = '';
+                    publishImageUrls = [];
+                    renderPublishImages();
+                    currentPage = 1;
+                    loadPosts();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast toast-' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        init();
+    </script>
+</body>
+</html>

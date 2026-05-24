@@ -1,0 +1,25 @@
+# Maven 构建产物
+target/
+*.class
+
+# IDE 配置
+.idea/
+*.iml
+.vscode/
+
+# 开发过程文档
+plan.md
+report.md
+VSCode部署指南.md
+部署与数据安全指南.md
+
+# 备份脚本
+backup.bat
+backup.sh
+
+# 临时文件与截图
+.playwright-mcp/
+screenshot_*.png
+
+# 架构图源文件
+architecture.dot

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - Windmill_BBS</title>
+    <link rel="icon" href="../Windmill_Icon.ico">
+    <link rel="stylesheet" href="../static/css/theme.css">
+    <script src="../static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .profile-page {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .profile-header {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .profile-avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 36px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            box-shadow: var(--shadow-inset-sm);
+            transition: box-shadow 0.2s;
+        }
+        .profile-avatar:hover {
+            box-shadow: var(--shadow-inset);
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-avatar .upload-hint {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .profile-avatar:hover .upload-hint {
+            opacity: 1;
+        }
+        .profile-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .profile-role {
+            font-size: 12px;
+            color: var(--accent-blue);
+            padding: 3px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 16px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised-sm);
+        }
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        .profile-stats .stat-item {
+            text-align: center;
+        }
+        .profile-stats .stat-value {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .profile-stats .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .profile-card {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .form-group .static-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            padding: 10px 0;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        .my-post-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .my-post-item:hover {
+            box-shadow: var(--shadow-inset-sm);
+            border-radius: var(--radius);
+            padding-left: 8px;
+            padding-right: 8px;
+            margin: 0 -8px;
+        }
+        .my-post-item:last-child {
+            border-bottom: none;
+        }
+        .my-post-item .post-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .my-post-item .post-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .my-post-item:hover .post-title {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="logo"><img src="../Windmill_Icon.ico" alt=""> Windmill_BBS</a>
+        <div class="nav-links">
+            <a href="../index.html">首页</a>
+            <a href="javascript:void(0)" onclick="logout()">退出</a>
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+        </div>
+    </nav>
+
+    <div class="main-container" style="margin-top:80px;">
+        <div class="profile-page">
+            <div class="profile-header">
+                <div class="profile-avatar" id="avatarArea" onclick="uploadAvatar()">
+                    <span id="avatarText">?</span>
+                    <div class="upload-hint">点击上传</div>
+                </div>
+                <div class="profile-name" id="userName">加载中...</div>
+                <div class="profile-role" id="userRole">普通用户</div>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statPosts">0</div>
+                        <div class="stat-label">发帖</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statReplies">0</div>
+                        <div class="stat-label">回复</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <div class="static-text" id="usernameText">-</div>
+                    </div>
+                    <div class="form-group">
+                        <label>昵称</label>
+                        <input type="text" class="input-field" id="nickname" name="nickname" placeholder="请输入昵称">
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" class="input-field" id="email" name="email" placeholder="请输入邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label>注册时间</label>
+                        <div class="static-text" id="registerTime">-</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">保存修改</button>
+                </form>
+            </div>
+
+            <div class="profile-card">
+                <div class="section-title">我的帖子</div>
+                <div id="myPostList">
+                    <div class="empty-state" style="padding:20px;">
+                        <div style="color:var(--text-muted);">暂无帖子</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        async function init() {
+            await loadProfile();
+            await loadMyPosts();
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('../api/user/info');
+                const data = await res.json();
+                if (data.code === 200) {
+                    const user = data.data;
+                    const avatarArea = document.getElementById('avatarArea');
+                    if (user.avatar) {
+                        avatarArea.innerHTML = `<img src="${user.avatar}" alt=""><div class="upload-hint">点击上传</div>`;
+                    } else {
+                        document.getElementById('avatarText').textContent = (user.nickname || user.username).charAt(0);
+                    }
+                    document.getElementById('userName').textContent = user.nickname || user.username;
+                    document.getElementById('userRole').textContent = user.role === 2 ? '管理员' : '普通用户';
+                    document.getElementById('usernameText').textContent = user.username;
+                    document.getElementById('nickname').value = user.nickname || '';
+                    document.getElementById('email').value = user.email || '';
+                    document.getElementById('registerTime').textContent = formatTime(user.registerTime);
+
+                    const profileRes = await fetch(`../api/user/profile?userId=${user.userId}`);
+                    const profileData = await profileRes.json();
+                    if (profileData.code === 200) {
+                        document.getElementById('statPosts').textContent = profileData.data.postCount || 0;
+                        document.getElementById('statReplies').textContent = profileData.data.replyCount || 0;
+                    }
+                } else if (data.code === 401) {
+                    location.href = '../login.html';
+                }
+            } catch (e) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        async function loadMyPosts() {
+            try {
+                const infoRes = await fetch('../api/user/info');
+                const infoData = await infoRes.json();
+                if (infoData.code !== 200) return;
+                const userId = infoData.data.userId;
+
+                const res = await fetch(`../api/post/list?boardId=0&page=1&pageSize=100`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    const posts = data.data.list.filter(p => p.authorId === userId);
+                    const container = document.getElementById('myPostList');
+                    if (posts.length === 0) {
+                        container.innerHTML = '<div class="empty-state" style="padding:20px;"><div style="color:var(--text-muted);">暂无帖子</div></div>';
+                        return;
+                    }
+                    let html = '';
+                    posts.forEach(p => {
+                        html += `<div class="my-post-item" onclick="location.href='../post/detail.html?id=${p.postId}'">
+                            <div class="post-title">${escapeHtml(p.title)}</div>
+                            <div class="post-meta">${formatTime(p.postTime)} · 👁 ${p.viewCount || 0} · 💬 ${p.replyCount || 0} · ❤️ ${p.likeCount || 0}</div>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (e) {}
+        }
+
+        async function uploadAvatar() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async function() {
+                const file = input.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const res = await fetch('../api/user/uploadAvatar', {method: 'POST', body: formData});
+                    const data = await res.json();
+                    if (data.code === 200) {
+                        showToast('头像更新成功', 'success');
+                        loadProfile();
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                } catch (e) {
+                    showToast('上传失败', 'error');
+                }
+            };
+            input.click();
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const res = await fetch('../api/user/update', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('保存成功', 'success');
+                    loadProfile();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        function logout() {
+            fetch('../api/user/logout', {method: 'POST'}).then(() => {
+                location.href = '../login.html';
+            });
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast toast-' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        init();
+    </script>
+</body>
+</html>

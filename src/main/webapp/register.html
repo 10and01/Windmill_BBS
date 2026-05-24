@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - Windmill_BBS</title>
+    <link rel="icon" href="Windmill_Icon.ico">
+    <link rel="stylesheet" href="static/css/theme.css">
+    <script src="static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .register-page {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-primary);
+        }
+        .register-card {
+            width: 420px;
+            padding: 40px 36px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-raised-lg);
+        }
+        .register-card h2 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .register-card .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+            box-shadow: var(--shadow-inset-sm);
+            transition: box-shadow 0.2s;
+        }
+        .input-group input:focus {
+            box-shadow: var(--shadow-inset);
+        }
+        .input-group input::placeholder {
+            color: var(--text-muted);
+        }
+        .btn-register {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #63D4D4, #B0EBD4);
+            border: none;
+            border-radius: var(--radius);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 4px 4px 10px rgba(99,212,212,0.3), -4px -4px 10px rgba(255,255,255,0.4);
+            transition: all 0.2s;
+        }
+        .btn-register:hover {
+            filter: brightness(1.05);
+            box-shadow: 6px 6px 14px rgba(99,212,212,0.35), -6px -6px 14px rgba(255,255,255,0.5);
+        }
+        .btn-register:active {
+            box-shadow: inset 4px 4px 10px rgba(60,160,160,0.3), inset -4px -4px 10px rgba(180,235,212,0.3);
+        }
+        .links {
+            margin-top: 24px;
+            text-align: center;
+        }
+        .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+        .links a:hover {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题" style="position:fixed;top:20px;right:20px;z-index:1000;">🌙</button>
+    <div class="register-page">
+        <div class="register-card">
+            <h2>用户注册</h2>
+            <p class="subtitle">加入 Windmill_BBS，开启交流之旅</p>
+            <form id="registerForm">
+                <div class="input-group">
+                    <input type="text" id="username" name="username" placeholder="用户名" required minlength="3" maxlength="32">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="密码" required minlength="6">
+                </div>
+                <div class="input-group">
+                    <input type="email" id="email" name="email" placeholder="邮箱" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="nickname" name="nickname" placeholder="昵称（可选）">
+                </div>
+                <button type="submit" class="btn-register">注 册</button>
+            </form>
+            <div class="links">
+                <a href="login.html">已有账号？立即登录</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const res = await fetch('api/user/register', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('注册成功', 'success');
+                    setTimeout(() => location.href = 'index.html', 500);
+                } else {
+                    showToast(data.message || '注册失败', 'error');
+                }
+            } catch (err) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast toast-' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

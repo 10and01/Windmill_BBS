@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户主页 - Windmill_BBS</title>
+    <link rel="icon" href="../Windmill_Icon.ico">
+    <link rel="stylesheet" href="../static/css/theme.css">
+    <script src="../static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .home-page {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .home-header {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .home-avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 36px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-inset-sm);
+        }
+        .home-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .home-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .home-role {
+            font-size: 12px;
+            color: var(--accent-blue);
+            padding: 3px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 16px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised-sm);
+        }
+        .home-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        .home-stats .stat-item {
+            text-align: center;
+        }
+        .home-stats .stat-value {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .home-stats .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .home-section {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        .post-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .post-item:last-child {
+            border-bottom: none;
+        }
+        .post-item .post-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .post-item .post-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .post-item:hover .post-title {
+            color: var(--accent-blue);
+        }
+        .post-item:hover {
+            box-shadow: var(--shadow-inset-sm);
+            border-radius: var(--radius);
+            padding-left: 8px;
+            padding-right: 8px;
+            margin: 0 -8px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="logo"><img src="../Windmill_Icon.ico" alt=""> Windmill_BBS</a>
+        <div class="nav-links">
+            <a href="../index.html">首页</a>
+            <a href="javascript:void(0)" onclick="history.back()">返回</a>
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+        </div>
+    </nav>
+
+    <div class="main-container" style="margin-top:80px;">
+        <div class="home-page">
+            <div class="home-header">
+                <div class="home-avatar" id="avatarArea">
+                    <span id="avatarText">?</span>
+                </div>
+                <div class="home-name" id="userName">加载中...</div>
+                <div class="home-role" id="userRole">普通用户</div>
+                <div class="home-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statPosts">0</div>
+                        <div class="stat-label">发帖</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statReplies">0</div>
+                        <div class="stat-label">回复</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="home-section">
+                <div class="section-title">发布的帖子</div>
+                <div id="postList">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted);">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(location.search);
+        const userId = urlParams.get('userId');
+
+        async function init() {
+            if (!userId) {
+                document.getElementById('postList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">用户ID不存在</div>';
+                return;
+            }
+            await loadUserProfile();
+            await loadUserPosts();
+        }
+
+        async function loadUserProfile() {
+            try {
+                const res = await fetch(`../api/user/profile?userId=${userId}`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    const profile = data.data;
+                    const avatarArea = document.getElementById('avatarArea');
+                    if (profile.avatar) {
+                        avatarArea.innerHTML = `<img src="${profile.avatar}" alt="">`;
+                    } else {
+                        document.getElementById('avatarText').textContent = (profile.nickname || profile.username).charAt(0);
+                    }
+                    document.getElementById('userName').textContent = profile.nickname || profile.username;
+                    document.getElementById('userRole').textContent = profile.role === 2 ? '管理员' : '普通用户';
+                    document.getElementById('statPosts').textContent = profile.postCount || 0;
+                    document.getElementById('statReplies').textContent = profile.replyCount || 0;
+                } else {
+                    document.getElementById('userName').textContent = '用户不存在';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadUserPosts() {
+            try {
+                const res = await fetch(`../api/post/list?boardId=0&page=1&pageSize=100`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    const posts = data.data.list.filter(p => p.authorId == userId);
+                    const container = document.getElementById('postList');
+                    if (posts.length === 0) {
+                        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">暂无帖子</div>';
+                        return;
+                    }
+                    let html = '';
+                    posts.forEach(p => {
+                        html += `<div class="post-item" onclick="location.href='../post/detail.html?id=${p.postId}'">
+                            <div class="post-title">${escapeHtml(p.title)}</div>
+                            <div class="post-meta">${formatTime(p.postTime)} · 👁 ${p.viewCount || 0} · 💬 ${p.replyCount || 0} · ❤️ ${p.likeCount || 0}</div>
+                        </div>`;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee 
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0"
+         metadata-complete="false">
+
+    <display-name>Enterprise BBS</display-name>
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <!-- 编码过滤器 -->
+    <filter>
+        <filter-name>EncodingFilter</filter-name>
+        <filter-class>com.enterprise.bbs.filter.EncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- 登录状态过滤器 -->
+    <filter>
+        <filter-name>LoginFilter</filter-name>
+        <filter-class>com.enterprise.bbs.filter.LoginFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>LoginFilter</filter-name>
+        <url-pattern>/api/post/publish</url-pattern>
+        <url-pattern>/api/post/update</url-pattern>
+        <url-pattern>/api/post/delete</url-pattern>
+        <url-pattern>/api/reply/*</url-pattern>
+        <url-pattern>/api/user/update</url-pattern>
+        <url-pattern>/api/user/info</url-pattern>
+        <url-pattern>/api/user/logout</url-pattern>
+        <url-pattern>/api/user/uploadAvatar</url-pattern>
+        <url-pattern>/api/upload/*</url-pattern>
+        <url-pattern>/api/like/*</url-pattern>
+        <url-pattern>/api/report/*</url-pattern>
+    </filter-mapping>
+
+    <!-- 管理员权限过滤器 -->
+    <filter>
+        <filter-name>AdminAuthFilter</filter-name>
+        <filter-class>com.enterprise.bbs.filter.AdminAuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AdminAuthFilter</filter-name>
+        <url-pattern>/api/admin/*</url-pattern>
+        <url-pattern>/api/board/add</url-pattern>
+        <url-pattern>/api/board/update</url-pattern>
+        <url-pattern>/api/board/delete</url-pattern>
+    </filter-mapping>
+
+    <!-- UserServlet -->
+    <servlet>
+        <servlet-name>UserServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.UserServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UserServlet</servlet-name>
+        <url-pattern>/api/user/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- PostServlet -->
+    <servlet>
+        <servlet-name>PostServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.PostServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>PostServlet</servlet-name>
+        <url-pattern>/api/post/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- ReplyServlet -->
+    <servlet>
+        <servlet-name>ReplyServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.ReplyServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReplyServlet</servlet-name>
+        <url-pattern>/api/reply/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- BoardServlet -->
+    <servlet>
+        <servlet-name>BoardServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.BoardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BoardServlet</servlet-name>
+        <url-pattern>/api/board/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- AdminServlet -->
+    <servlet>
+        <servlet-name>AdminServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.AdminServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminServlet</servlet-name>
+        <url-pattern>/api/admin/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- UploadServlet -->
+    <servlet>
+        <servlet-name>UploadServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.UploadServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UploadServlet</servlet-name>
+        <url-pattern>/api/upload/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- LikeServlet -->
+    <servlet>
+        <servlet-name>LikeServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.LikeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LikeServlet</servlet-name>
+        <url-pattern>/api/like/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- ReportServlet -->
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>com.enterprise.bbs.controller.ReportServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/api/report/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Session配置 -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
+
+    <!-- 错误页面 -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/404.html</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/500.html</location>
+    </error-page>
+</web-app>

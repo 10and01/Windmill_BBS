@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子详情 - Windmill_BBS</title>
+    <link rel="icon" href="../Windmill_Icon.ico">
+    <link rel="stylesheet" href="../static/css/theme.css">
+    <script src="../static/js/theme.js"></script>
+    <script>(function(){const s=localStorage.getItem('theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <style>
+        .detail-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .detail-main {
+            flex: 1;
+            min-width: 0;
+        }
+        .timeline-sidebar {
+            width: 180px;
+            flex-shrink: 0;
+        }
+        .timeline-card {
+            position: sticky;
+            top: 90px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            position: relative;
+            padding-left: 16px;
+            border-left: 2px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised-sm);
+            transition: all 0.2s;
+        }
+        .timeline-item:hover {
+            color: var(--accent-blue);
+        }
+        .timeline-item.active {
+            color: var(--accent-blue);
+            font-weight: 500;
+            border-left-color: var(--accent-blue);
+        }
+        .timeline-item.active::before {
+            background: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(74,144,217,0.2);
+        }
+        .timeline-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .post-detail {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            margin-bottom: 20px;
+        }
+        .post-detail h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .author-info .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-inset-sm);
+        }
+        .author-info .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .author-info .info {
+            flex: 1;
+        }
+        .author-info .name {
+            font-size: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .author-info .name:hover {
+            color: var(--accent-blue);
+        }
+        .author-info .time {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .post-content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        .reply-section {
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-raised);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+        .reply-section h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        .reply-item {
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+        }
+        .reply-item:hover {
+            box-shadow: var(--shadow-inset-sm);
+        }
+        .reply-item:last-child { margin-bottom: 0; }
+        .reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .reply-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .reply-author .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 13px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-inset-sm);
+        }
+        .reply-author .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .reply-author .name {
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .reply-author .name:hover {
+            color: var(--accent-blue);
+        }
+        .reply-author .floor {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .reply-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .reply-content {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            padding-left: 46px;
+            word-break: break-all;
+        }
+        .reply-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            padding-left: 46px;
+        }
+        .reply-form {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .reply-form textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 14px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: vertical;
+            outline: none;
+            box-shadow: var(--shadow-inset-sm);
+            transition: box-shadow 0.2s;
+        }
+        .reply-form textarea:focus {
+            box-shadow: var(--shadow-inset);
+        }
+        .reply-form button {
+            margin-top: 12px;
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #63D4D4, #B0EBD4);
+            border: none;
+            border-radius: var(--radius);
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 4px 4px 8px rgba(99,212,212,0.25), -4px -4px 8px rgba(255,255,255,0.4);
+            transition: all 0.2s;
+        }
+        .reply-form button:hover {
+            filter: brightness(1.05);
+            box-shadow: 6px 6px 12px rgba(99,212,212,0.3), -6px -6px 12px rgba(255,255,255,0.5);
+        }
+        .reply-form button:active {
+            box-shadow: inset 4px 4px 8px rgba(60,160,160,0.3), inset -4px -4px 8px rgba(180,235,212,0.3);
+        }
+        .empty-reply {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="logo"><img src="../Windmill_Icon.ico" alt=""> Windmill_BBS</a>
+        <div class="nav-links">
+            <a href="../index.html">首页</a>
+            <a href="javascript:void(0)" onclick="history.back()">返回</a>
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+        </div>
+    </nav>
+
+    <div class="main-container" style="margin-top:80px;">
+        <div class="detail-layout">
+            <div class="detail-main">
+                <article class="post-detail" id="postDetail">
+                    <div style="text-align:center;padding:40px;color:var(--text-muted);">加载中...</div>
+                </article>
+
+                <section class="reply-section">
+                    <h3 id="replyCountTitle">回复</h3>
+                    <div id="replyList"></div>
+                    <div class="reply-form">
+                        <div id="replyImages" style="margin-bottom:10px;"></div>
+                        <textarea id="replyContent" placeholder="写下你的回复..."></textarea>
+                        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+                            <button class="btn btn-secondary btn-sm" onclick="uploadImage('reply')">
+                                <span>📎</span> 添加图片
+                            </button>
+                            <button onclick="doReply()">发表回复</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <aside class="timeline-sidebar">
+                <div class="timeline-card">
+                    <div class="timeline-title">时间轴</div>
+                    <div class="timeline-list" id="timelineList"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 编辑帖子模态框 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">编辑帖子</div>
+            <div class="modal-body">
+                <div style="margin-bottom:14px;">
+                    <select class="input-field" id="editBoardId"></select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <input type="text" class="input-field" id="editTitle" placeholder="帖子标题">
+                </div>
+                <div>
+                    <textarea class="input-field" id="editContent" placeholder="帖子内容"></textarea>
+                </div>
+                <div id="editImages" style="margin-top:10px;"></div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="uploadImage('edit')">
+                    <span>📎</span> 添加图片
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="doUpdate()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 举报模态框 -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">举报</div>
+            <div class="modal-body">
+                <textarea class="input-field" id="reportReason" placeholder="请填写举报原因..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReportModal()">取消</button>
+                <button class="btn btn-danger" onclick="doReport()">提交举报</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(location.search);
+        const postId = urlParams.get('id');
+        let currentUser = null;
+        let postData = null;
+        let replyImageUrls = [];
+        let editImageUrls = [];
+        let reportTargetType = null;
+        let reportTargetId = null;
+
+        async function init() {
+            await checkLogin();
+            await loadBoards();
+            await loadPost();
+            await loadReplies();
+        }
+
+        async function checkLogin() {
+            try {
+                const res = await fetch('../api/user/info');
+                const data = await res.json();
+                if (data.code === 200) {
+                    currentUser = data.data;
+                }
+            } catch (e) {}
+        }
+
+        async function loadBoards() {
+            try {
+                const res = await fetch('../api/board/list');
+                const data = await res.json();
+                if (data.code === 200) {
+                    const select = document.getElementById('editBoardId');
+                    data.data.forEach(b => {
+                        if (b.postPermission === 1 && (!currentUser || currentUser.role !== 2)) return;
+                        const opt = document.createElement('option');
+                        opt.value = b.boardId;
+                        opt.textContent = b.boardName;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        async function loadPost() {
+            if (!postId) {
+                document.getElementById('postDetail').innerHTML = '<div style="text-align:center;padding:40px;">帖子ID不存在</div>';
+                return;
+            }
+            try {
+                const res = await fetch(`../api/post/detail?id=${postId}`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    postData = data.data;
+                    renderPost(data.data);
+                } else {
+                    document.getElementById('postDetail').innerHTML = `<div style="text-align:center;padding:40px;">${data.message}</div>`;
+                }
+            } catch (e) {
+                showToast('加载失败', 'error');
+            }
+        }
+
+        function renderPost(post) {
+            const canEdit = currentUser && currentUser.userId === post.authorId;
+            const canDelete = currentUser && (currentUser.userId === post.authorId || currentUser.role === 2);
+            const avatarHtml = post.authorAvatar ? `<img src="${post.authorAvatar}" alt="">` : (post.authorName || '匿').charAt(0);
+
+            let imagesHtml = '';
+            if (post.images) {
+                try {
+                    const images = JSON.parse(post.images);
+                    if (images.length > 0) {
+                        imagesHtml = '<div class="image-grid">' + images.map(url => `<img src="${url}" onclick="openImagePreview('${url}')" style="cursor:zoom-in;">`).join('') + '</div>';
+                    }
+                } catch (e) {}
+            }
+
+            let html = `
+                <h1>
+                    ${post.isTop ? '<span class="tag tag-top">置顶</span>' : ''}
+                    ${post.isElite ? '<span class="tag tag-elite">精华</span>' : ''}
+                    ${escapeHtml(post.title)}
+                </h1>
+                <div class="author-info">
+                    <div class="avatar">${avatarHtml}</div>
+                    <div class="info">
+                        <div class="name" onclick="goUserHome(${post.authorId})">${escapeHtml(post.authorName || '匿名用户')}</div>
+                        <div class="time">发表于 ${formatTime(post.postTime)} · ${escapeHtml(post.boardName || '')} · 👁 ${post.viewCount || 0} 浏览 · 💬 ${post.replyCount || 0} 回复</div>
+                    </div>
+                </div>
+                <div class="post-actions">
+                    <button class="like-btn" id="postLikeBtn" onclick="toggleLike(1, ${post.postId})">
+                        <span>❤️</span> <span id="postLikeCount">${post.likeCount || 0}</span>
+                    </button>
+                    ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="openEditModal()">编辑</button>` : ''}
+                    ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deletePost()">删除</button>` : ''}
+                    <button class="report-btn" onclick="openReportModal(1, ${post.postId})">举报</button>
+                </div>
+                <div class="post-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
+                ${imagesHtml}
+            `;
+            document.getElementById('postDetail').innerHTML = html;
+            loadLikeStatus(1, post.postId);
+            if (window.__timelineReplies) buildTimeline(post, window.__timelineReplies);
+        }
+
+        async function loadLikeStatus(targetType, targetId) {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`../api/like/status?targetType=${targetType}&targetId=${targetId}`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    const btn = targetType === 1 ? document.getElementById('postLikeBtn') : document.getElementById(`replyLikeBtn_${targetId}`);
+                    if (btn) {
+                        if (data.data.liked) btn.classList.add('liked');
+                        else btn.classList.remove('liked');
+                        const countEl = btn.querySelector('span:last-child');
+                        if (countEl) countEl.textContent = data.data.count;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function toggleLike(targetType, targetId) {
+            if (!currentUser) {
+                showToast('请先登录', 'error');
+                setTimeout(() => location.href = '../login.html', 1000);
+                return;
+            }
+            try {
+                const res = await fetch('../api/like/toggle', {
+                    method: 'POST',
+                    body: new URLSearchParams({targetType, targetId})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    loadLikeStatus(targetType, targetId);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function loadReplies() {
+            if (!postId) return;
+            try {
+                const res = await fetch(`../api/reply/list?postId=${postId}&page=1&pageSize=100`);
+                const data = await res.json();
+                if (data.code === 200) {
+                    const replies = data.data.list || [];
+                    document.getElementById('replyCountTitle').textContent = `共 ${replies.length} 条回复`;
+                    renderReplies(replies);
+                }
+            } catch (e) {
+                console.error('加载回复失败', e);
+            }
+        }
+
+        function renderReplies(replies) {
+            const container = document.getElementById('replyList');
+            if (!replies || replies.length === 0) {
+                container.innerHTML = '<div class="empty-reply">暂无回复，快来抢沙发吧~</div>';
+                return;
+            }
+            let html = '';
+            replies.forEach(r => {
+                const canDelete = currentUser && (currentUser.userId === r.authorId || currentUser.role === 2);
+                const avatarHtml = r.authorAvatar ? `<img src="${r.authorAvatar}" alt="">` : (r.authorName || '匿').charAt(0);
+
+                let imagesHtml = '';
+                if (r.images) {
+                    try {
+                        const images = JSON.parse(r.images);
+                        if (images.length > 0) {
+                            imagesHtml = '<div class="image-grid" style="padding-left:46px;margin-top:8px;">' + images.map(url => `<img src="${url}" onclick="openImagePreview('${url}')" style="cursor:zoom-in;">`).join('') + '</div>';
+                        }
+                    } catch (e) {}
+                }
+
+                html += `<div class="reply-item" id="reply_${r.replyId}">
+                    <div class="reply-header">
+                        <div class="reply-author">
+                            <div class="avatar">${avatarHtml}</div>
+                            <span class="name" onclick="goUserHome(${r.authorId})">${escapeHtml(r.authorName || '匿名用户')}</span>
+                            <span class="floor">${r.floorNum}楼</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="reply-time">${formatTime(r.replyTime)}</span>
+                            ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteReply(${r.replyId})">删除</button>` : ''}
+                        </div>
+                    </div>
+                    <div class="reply-content">${escapeHtml(r.content).replace(/\n/g, '<br>')}</div>
+                    ${imagesHtml}
+                    <div class="reply-actions">
+                        <button class="like-btn" id="replyLikeBtn_${r.replyId}" onclick="toggleLike(2, ${r.replyId})">
+                            <span>❤️</span> <span>${r.likeCount || 0}</span>
+                        </button>
+                        <button class="report-btn" onclick="openReportModal(2, ${r.replyId})">举报</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+            replies.forEach(r => loadLikeStatus(2, r.replyId));
+            window.__timelineReplies = replies;
+            if (postData) buildTimeline(postData, replies);
+            initTimelineScroll();
+        }
+
+        function buildTimeline(post, replies) {
+            const list = document.getElementById('timelineList');
+            if (!list || !post) return;
+            let html = `<div class="timeline-item active" data-target="postDetail" onclick="scrollToTarget('postDetail')">
+                <div>
+                    <div>楼主</div>
+                    <div class="timeline-date">${formatDate(post.postTime)}</div>
+                </div>
+            </div>`;
+            replies.forEach(r => {
+                html += `<div class="timeline-item" data-target="reply_${r.replyId}" onclick="scrollToTarget('reply_${r.replyId}')">
+                    <div>
+                        <div>${r.floorNum}楼</div>
+                        <div class="timeline-date">${formatDate(r.replyTime)}</div>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function scrollToTarget(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                const offset = 90;
+                const top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({ top, behavior: 'smooth' });
+            }
+        }
+
+        function initTimelineScroll() {
+            const items = document.querySelectorAll('.timeline-item');
+            const targets = Array.from(items).map(i => document.getElementById(i.dataset.target)).filter(Boolean);
+            if (targets.length === 0) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        items.forEach(item => {
+                            item.classList.toggle('active', item.dataset.target === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: '-90px 0px -60% 0px', threshold: 0 });
+
+            targets.forEach(t => observer.observe(t));
+        }
+
+        function formatDate(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return String(d.getMonth()+1) + '月' + String(d.getDate()) + '日';
+        }
+
+        async function doReply() {
+            if (!currentUser) {
+                showToast('请先登录', 'error');
+                setTimeout(() => location.href = '../login.html', 1000);
+                return;
+            }
+            const content = document.getElementById('replyContent').value.trim();
+            if (!content) {
+                showToast('请输入回复内容', 'error');
+                return;
+            }
+            const params = new URLSearchParams({postId, content});
+            if (replyImageUrls.length > 0) {
+                params.append('images', JSON.stringify(replyImageUrls));
+            }
+            try {
+                const res = await fetch('../api/reply/publish', {
+                    method: 'POST',
+                    body: params
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('回复成功', 'success');
+                    document.getElementById('replyContent').value = '';
+                    replyImageUrls = [];
+                    renderReplyImages();
+                    loadReplies();
+                    if (postData) postData.replyCount = (postData.replyCount || 0) + 1;
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function deletePost() {
+            if (!confirm('确定要删除此帖子吗？')) return;
+            try {
+                const res = await fetch('../api/post/delete', {
+                    method: 'POST',
+                    body: new URLSearchParams({postId})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('删除成功', 'success');
+                    setTimeout(() => location.href = '../index.html', 500);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        async function deleteReply(replyId) {
+            if (!confirm('确定要删除此回复吗？')) return;
+            try {
+                const res = await fetch('../api/reply/delete', {
+                    method: 'POST',
+                    body: new URLSearchParams({replyId})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('删除成功', 'success');
+                    loadReplies();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        function openEditModal() {
+            if (!postData) return;
+            document.getElementById('editTitle').value = postData.title;
+            document.getElementById('editContent').value = postData.content;
+            document.getElementById('editBoardId').value = postData.boardId;
+            editImageUrls = [];
+            if (postData.images) {
+                try {
+                    editImageUrls = JSON.parse(postData.images);
+                } catch (e) {}
+            }
+            renderEditImages();
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function doUpdate() {
+            const boardId = document.getElementById('editBoardId').value;
+            const title = document.getElementById('editTitle').value.trim();
+            const content = document.getElementById('editContent').value.trim();
+            if (!boardId) { showToast('请选择版块', 'error'); return; }
+            if (!title) { showToast('请输入标题', 'error'); return; }
+            if (!content) { showToast('请输入内容', 'error'); return; }
+
+            const params = new URLSearchParams({postId, boardId, title, content});
+            if (editImageUrls.length > 0) {
+                params.append('images', JSON.stringify(editImageUrls));
+            }
+            try {
+                const res = await fetch('../api/post/update', {
+                    method: 'POST',
+                    body: params
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('更新成功', 'success');
+                    closeEditModal();
+                    loadPost();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        function openReportModal(targetType, targetId) {
+            if (!currentUser) {
+                showToast('请先登录', 'error');
+                setTimeout(() => location.href = '../login.html', 1000);
+                return;
+            }
+            reportTargetType = targetType;
+            reportTargetId = targetId;
+            document.getElementById('reportReason').value = '';
+            document.getElementById('reportModal').classList.add('active');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        async function doReport() {
+            const reason = document.getElementById('reportReason').value.trim();
+            if (!reason) { showToast('请填写举报原因', 'error'); return; }
+            try {
+                const res = await fetch('../api/report/submit', {
+                    method: 'POST',
+                    body: new URLSearchParams({targetType: reportTargetType, targetId: reportTargetId, reason})
+                });
+                const data = await res.json();
+                if (data.code === 200) {
+                    showToast('举报成功', 'success');
+                    closeReportModal();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
+        function goUserHome(userId) {
+            location.href = `../user/home.html?userId=${userId}`;
+        }
+
+        async function uploadImage(context) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async function() {
+                const file = input.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const res = await fetch('../api/upload/image', {method: 'POST', body: formData});
+                    const data = await res.json();
+                    if (data.code === 200) {
+                        if (context === 'reply') {
+                            replyImageUrls.push(data.data);
+                            renderReplyImages();
+                        } else if (context === 'edit') {
+                            editImageUrls.push(data.data);
+                            renderEditImages();
+                        }
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                } catch (e) {
+                    showToast('上传失败', 'error');
+                }
+            };
+            input.click();
+        }
+
+        function renderReplyImages() {
+            const container = document.getElementById('replyImages');
+            if (replyImageUrls.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = '<div class="image-grid">' + replyImageUrls.map(url => `<img src="${url}" onclick="removeReplyImage('${url}')">`).join('') + '</div>';
+        }
+
+        function removeReplyImage(url) {
+            replyImageUrls = replyImageUrls.filter(u => u !== url);
+            renderReplyImages();
+        }
+
+        function renderEditImages() {
+            const container = document.getElementById('editImages');
+            if (editImageUrls.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = '<div class="image-grid">' + editImageUrls.map(url => `<img src="${url}" onclick="removeEditImage('${url}')">`).join('') + '</div>';
+        }
+
+        function removeEditImage(url) {
+            editImageUrls = editImageUrls.filter(u => u !== url);
+            renderEditImages();
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast toast-' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const d = new Date(timeStr);
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        init();
+    </script>
+</body>
+</html>
