@@ -183,7 +183,10 @@ public class UserServlet extends HttpServlet {
         }
 
         String newFileName = java.util.UUID.randomUUID().toString() + ext;
-        String uploadPath = req.getServletContext().getRealPath("/uploads");
+        String uploadPath = System.getenv("UPLOAD_DIR");
+        if (uploadPath == null || uploadPath.isEmpty()) {
+            uploadPath = req.getServletContext().getRealPath("/uploads");
+        }
         java.io.File uploadDir = new java.io.File(uploadPath);
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();

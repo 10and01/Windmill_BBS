@@ -30,5 +30,14 @@ else
     echo "警告: 未设置 DATABASE_URL 环境变量，将使用打包时的默认配置"
 fi
 
+# 创建上传目录软链接，将持久化卷挂载点映射到 webapp 内
+if [ -n "$UPLOAD_DIR" ]; then
+    mkdir -p "$UPLOAD_DIR"
+    UPLOAD_LINK="/usr/local/tomcat/webapps/ROOT/uploads"
+    rm -rf "$UPLOAD_LINK"
+    ln -s "$UPLOAD_DIR" "$UPLOAD_LINK"
+    echo "上传目录已链接: $UPLOAD_LINK -> $UPLOAD_DIR"
+fi
+
 # 启动 Tomcat
 exec /usr/local/tomcat/bin/catalina.sh run
