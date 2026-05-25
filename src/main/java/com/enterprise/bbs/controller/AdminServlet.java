@@ -7,8 +7,10 @@ import com.enterprise.bbs.service.PostService;
 import com.enterprise.bbs.service.ReportService;
 import com.enterprise.bbs.service.UserService;
 import com.enterprise.bbs.util.JsonUtil;
+import com.enterprise.bbs.dao.BoardDAO;
 import com.enterprise.bbs.dao.PostDAO;
 import com.enterprise.bbs.dao.UserDAO;
+import com.enterprise.bbs.model.Post;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,7 @@ public class AdminServlet extends HttpServlet {
     private final ReportService reportService = new ReportService();
     private final PostDAO postDAO = new PostDAO();
     private final UserDAO userDAO = new UserDAO();
+    private final BoardDAO boardDAO = new BoardDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -120,7 +123,13 @@ public class AdminServlet extends HttpServlet {
             return;
         }
         int postId = Integer.parseInt(postIdStr);
+        Post post = postDAO.selectById(postId);
+        if (post == null) {
+            JsonUtil.writeJson(resp, Result.error(404, "帖子不存在"));
+            return;
+        }
         postDAO.updateStatus(postId, 0);
+        boardDAO.updatePostCount(post.getBoardId(), -1);
         JsonUtil.writeJson(resp, Result.success("删除成功", true));
     }
 

@@ -116,7 +116,12 @@ public class UserServlet extends HttpServlet {
         user.setUserId(currentUser.getUserId());
         user.setNickname(req.getParameter("nickname"));
         user.setEmail(req.getParameter("email"));
-        user.setAvatar(req.getParameter("avatar"));
+        String avatar = req.getParameter("avatar");
+        if (avatar == null || avatar.isEmpty()) {
+            user.setAvatar(currentUser.getAvatar());
+        } else {
+            user.setAvatar(avatar);
+        }
 
         Result<User> result = userService.updateUser(user);
         if (result.isSuccess()) {
