@@ -8,6 +8,11 @@ RUN mvn clean package -DskipTests
 # 运行阶段
 FROM tomcat:9.0-jdk11-temurin
 
+# 设置容器时区为中国东八区
+ENV TZ=Asia/Shanghai
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/* \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # 删除 Tomcat 默认应用
 RUN rm -rf /usr/local/tomcat/webapps/*
 

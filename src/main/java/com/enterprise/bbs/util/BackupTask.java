@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,8 @@ public class BackupTask implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        // 强制设置JVM默认时区为中国东八区，避免时间显示偏移
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
         logger.info("启动自动备份任务，每天凌晨2:00执行");
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
