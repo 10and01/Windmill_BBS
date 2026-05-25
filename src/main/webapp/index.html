@@ -354,6 +354,7 @@
         }
 
         let publishImageUrls = [];
+        let isPublishing = false;
 
         async function uploadImage(context) {
             const input = document.createElement('input');
@@ -403,12 +404,20 @@
         }
 
         async function doPublish() {
+            if (isPublishing) return;
             const boardId = document.getElementById('publishBoardId').value;
             const title = document.getElementById('publishTitle').value.trim();
             const content = document.getElementById('publishContent').value.trim();
             if (!boardId) { showToast('请选择版块', 'error'); return; }
             if (!title) { showToast('请输入标题', 'error'); return; }
             if (!content) { showToast('请输入内容', 'error'); return; }
+
+            const publishBtn = document.querySelector('#publishModal .modal-footer .btn-primary');
+            isPublishing = true;
+            if (publishBtn) {
+                publishBtn.disabled = true;
+                publishBtn.textContent = '发表中...';
+            }
 
             const params = new URLSearchParams({boardId, title, content});
             if (publishImageUrls.length > 0) {
@@ -434,6 +443,12 @@
                 }
             } catch (e) {
                 showToast('网络错误', 'error');
+            } finally {
+                isPublishing = false;
+                if (publishBtn) {
+                    publishBtn.disabled = false;
+                    publishBtn.textContent = '发表';
+                }
             }
         }
 

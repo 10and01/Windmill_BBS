@@ -193,6 +193,10 @@ public class UserServlet extends HttpServlet {
         filePart.write(file.getAbsolutePath());
 
         String url = req.getContextPath() + "/uploads/" + newFileName;
-        JsonUtil.writeJson(resp, userService.updateAvatar(currentUser.getUserId(), url));
+        Result<User> result = userService.updateAvatar(currentUser.getUserId(), url);
+        if (result.isSuccess()) {
+            req.getSession().setAttribute("currentUser", result.getData());
+        }
+        JsonUtil.writeJson(resp, result);
     }
 }

@@ -236,7 +236,12 @@
                     if (user.avatar) {
                         avatarArea.innerHTML = `<img src="${user.avatar}" alt=""><div class="upload-hint">点击上传</div>`;
                     } else {
-                        document.getElementById('avatarText').textContent = (user.nickname || user.username).charAt(0);
+                        const avatarText = document.getElementById('avatarText');
+                        if (avatarText) {
+                            avatarText.textContent = (user.nickname || user.username).charAt(0);
+                        } else {
+                            avatarArea.innerHTML = `<span id="avatarText">${(user.nickname || user.username).charAt(0)}</span><div class="upload-hint">点击上传</div>`;
+                        }
                     }
                     document.getElementById('userName').textContent = user.nickname || user.username;
                     document.getElementById('userRole').textContent = user.role === 2 ? '管理员' : '普通用户';
@@ -301,6 +306,10 @@
                     const data = await res.json();
                     if (data.code === 200) {
                         showToast('头像更新成功', 'success');
+                        if (data.data && data.data.avatar) {
+                            const avatarArea = document.getElementById('avatarArea');
+                            avatarArea.innerHTML = `<img src="${data.data.avatar}" alt=""><div class="upload-hint">点击上传</div>`;
+                        }
                         loadProfile();
                     } else {
                         showToast(data.message, 'error');

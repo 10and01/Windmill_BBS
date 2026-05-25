@@ -367,6 +367,7 @@
         let currentUser = null;
         let postData = null;
         let replyImageUrls = [];
+        let isReplying = false;
         let editImageUrls = [];
         let reportTargetType = null;
         let reportTargetId = null;
@@ -631,11 +632,20 @@
                 setTimeout(() => location.href = '../login.html', 1000);
                 return;
             }
+            if (isReplying) return;
             const content = document.getElementById('replyContent').value.trim();
             if (!content) {
                 showToast('请输入回复内容', 'error');
                 return;
             }
+
+            const replyBtn = document.querySelector('.reply-form button[onclick="doReply()"]');
+            isReplying = true;
+            if (replyBtn) {
+                replyBtn.disabled = true;
+                replyBtn.textContent = '发表中...';
+            }
+
             const params = new URLSearchParams({postId, content});
             if (replyImageUrls.length > 0) {
                 params.append('images', JSON.stringify(replyImageUrls));
@@ -658,6 +668,12 @@
                 }
             } catch (e) {
                 showToast('网络错误', 'error');
+            } finally {
+                isReplying = false;
+                if (replyBtn) {
+                    replyBtn.disabled = false;
+                    replyBtn.textContent = '发表回复';
+                }
             }
         }
 
