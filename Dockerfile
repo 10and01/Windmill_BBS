@@ -22,10 +22,6 @@ RUN mkdir -p /usr/local/tomcat/webapps/ROOT && \
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# 创建持久化上传目录
-RUN mkdir -p /data/uploads
-ENV UPLOAD_DIR=/data/uploads
-
 # 暴露端口
 EXPOSE 8080
 

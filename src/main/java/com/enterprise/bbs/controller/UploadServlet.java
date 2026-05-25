@@ -78,10 +78,7 @@ public class UploadServlet extends HttpServlet {
         }
 
         String newFileName = UUID.randomUUID().toString() + ext;
-        String uploadPath = System.getenv("UPLOAD_DIR");
-        if (uploadPath == null || uploadPath.isEmpty()) {
-            uploadPath = req.getServletContext().getRealPath("/uploads");
-        }
+        String uploadPath = req.getServletContext().getRealPath("/uploads");
         File uploadDir = new File(uploadPath);
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
