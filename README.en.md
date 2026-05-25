@@ -16,6 +16,8 @@
 
 Windmill_BBS is an enterprise-level BBS forum system built on **Java Servlet + JDBC**. The frontend is implemented with pure HTML/CSS/JS, featuring a **Neumorphism** design style with **light/dark dual-theme support**, fresh color palettes, and smooth interactive experiences.
 
+🚀 **Live Demo**: https://windmillbbs-production.up.railway.app/
+
 ---
 
 ## ✨ Features

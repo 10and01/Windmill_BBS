@@ -16,6 +16,8 @@
 
 Windmill_BBS 是一个基于 Java Servlet + JDBC 构建的企业级 BBS 论坛系统。前端采用纯 HTML/CSS/JS 实现，整体 UI 采用**新拟物派（Neumorphism）**设计风格，支持**浅色/暗色双主题自由切换**，配色清新柔和，交互体验流畅。
 
+🚀 **在线预览**：https://windmillbbs-production.up.railway.app/
+
 ---
 
 ## ✨ 功能特性
